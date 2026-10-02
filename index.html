@@ -63,7 +63,7 @@
 
 <script>
   // 👇 Paste your Google Apps Script Web App URL here
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz31zOYtIOLA1g8qEY9Y3ocvGKhRrnFgUv44cwovgwpR9ocqkAEOROPh3nsWKxQn_2qHw/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/library/d/1JHmEw7AH2hbbcHQYtd0Qa51TrN5vlHQWAddQi_HLKqbSryQ1OUj2XXjL/2";
 
   let machines = [];
   let scans = [];
@@ -72,10 +72,23 @@
   const esc = (v) => String(v ?? "-").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const fmt = (t) => t ? new Date(t).toLocaleString([], { hour: "2-digit", minute: "2-digit", day: "numeric", month: "short" }) : "Never";
 
+  // Loads data using a <script> tag (JSONP) so CORS never blocks it
+  function loadData() {
+    return new Promise((resolve, reject) => {
+      const name = "cb" + Date.now();
+      const s = document.createElement("script");
+      const timer = setTimeout(() => { cleanup(); reject(new Error("timed out")); }, 15000);
+      const cleanup = () => { clearTimeout(timer); delete window[name]; s.remove(); };
+      window[name] = (d) => { cleanup(); resolve(d); };
+      s.onerror = () => { cleanup(); reject(new Error("script failed to load")); };
+      s.src = SCRIPT_URL + "?callback=" + name;
+      document.body.appendChild(s);
+    });
+  }
+
   async function load() {
     try {
-      const res = await fetch(SCRIPT_URL);
-      const data = await res.json();
+      const data = await loadData();
 
       // names from the Machines tab
       const names = {};
@@ -89,7 +102,7 @@
       scans = data.scans.slice(-10).reverse();
       $("status").textContent = "";
     } catch (e) {
-      $("status").textContent = "Could not load data. Check SCRIPT_URL and the web app access setting.";
+      $("status").textContent = "Could not load data (" + e.message + "). Check SCRIPT_URL and redeploy the script as a New version.";
     }
     render();
   }
