@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+const API = import.meta.env.VITE_API_URL || "";
 
 const time = (t) =>
   t ? new Date(t).toLocaleString([], { hour: "2-digit", minute: "2-digit", day: "numeric", month: "short" }) : "Never";
@@ -11,7 +12,7 @@ export default function App() {
   const [location, setLocation] = useState("");
 
   const load = async () => {
-    const [e, s] = await Promise.all([axios.get("/api/equipment"), axios.get("/api/scans")]);
+    const [e, s] = await Promise.all([axios.get(`${API}/api/equipment`), axios.get(`${API}/api/scans`)]);
     setEquipment(e.data);
     setScans(s.data);
   };
